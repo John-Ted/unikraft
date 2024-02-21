@@ -41,6 +41,7 @@
 #include <uk/plat/common/lcpu.h>
 #include <uk/reloc.h>
 #include <kvm-x86/traps.h>
+#include <uk/asm/cet.h>
 #include "lcpu_helpers.S"
 
 #define SEC_BEGIN(x)		.globl x86_##x##_begin; x86_##x##_begin = .;
@@ -357,6 +358,11 @@ no_fsgsbase:
 no_pku:
 #endif /* CONFIG_HAVE_X86PKU */
 
+#if (__CET__ && (CONFIG_X86_64_CET_IBT || CONFIG_X86_64_CET_SS))
+	LCPU_ENABLE_CET no_cet
+no_cet:
+#endif /* CET */
+
 	/* Check if we have startup arguments supplied */
 	test	%r8, %r8
 	jz	no_args
@@ -391,7 +397,7 @@ jump_to_entry:
 	/* Arguments for entry function
 	 * arg0 @ RDI = this CPU, arg1 @ RSI = boot parameters (if available)
 	 */
-	jmp	*%rax
+	X86_CET_ENDBR_NOTRACK jmp	*%rax
 
 .pushsection .rodata
 lcpu_start64_fail_msg:

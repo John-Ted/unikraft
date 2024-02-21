@@ -39,6 +39,7 @@
 
 #include <kvm-x86/serial_console.h>
 #include <uk/arch/lcpu.h>
+#include <uk/asm/cet.h>
 
 /**
  * Enable the floating point unit (FPU) and Streaming SIMD Extensions (SSE).
@@ -152,6 +153,7 @@ ldmxcsr_rval_addr:
 .endm
 
 /**
+<<<<<<< HEAD
  * Super basic enable macro for the widely available COM1 UART port. Can be run
  * in any mode.
  *
@@ -217,5 +219,36 @@ ldmxcsr_rval_addr:
 	incq	%rsi
 	jmp	0b
 1:
+.endm
+
+ /* Enable Control-flow Enforcement Technology. Jump to the fail label
+ * if not successful
+ * 
+ * @in: nothing (we do our own CPUID)
+ * @clobbers: RAX, RBX, RCX, RDX
+ */
+.macro LCPU_ENABLE_CET no_cet_label
+	movq	$7, %rax
+	xorq	%rcx, %rcx
+	cpuid
+
+	testl $(X86_CPUID7_EDX_CET_IBT), %edx
+	jz no_ibt_support
+	jmp enable_ibt
+
+no_ibt_support:
+	testl	$(X86_CPUID7_ECX_CET_SS), %ecx
+	jz		\no_cet_label
+	jmp enable_cr4_cet
+
+enable_ibt:
+	movl $(MSR_IA32_S_CET), %ecx
+	movl $(X86_CET_ENDBR_EN | X86_CET_NO_TRACK_EN), %eax
+	xorl %edx, %edx
+	wrmsr
+enable_cr4_cet:
+	movq	%cr4, %rax
+	orq		$(X86_CR4_CET), %rax
+	movq	%rax, %cr4
 .endm
 #endif /* __PLAT_KVM_X86_LCPU_HELPERS_S__ */
