@@ -88,3 +88,25 @@ config MARCH_X86_64_BTVER2
 		CPUs based on AMD Family 16h cores with x86-64 instruction set support. This includes MOVBE, F16C, BMI, AVX, PCL_MUL, AES, SSE4.2, SSE4.1, CX16, ABM, SSE4A, SSSE3, SSE3, SSE2, SSE, MMX and 64-bit instruction set extensions.
 endchoice
 
+<<<<<<< HEAD
+=======
+menu "Processor Features"
+
+config X86_64_HAVE_RANDOM
+	bool "Processor-generated randomness"
+	select HAVE_RANDOM
+	help
+	  Enable processor-generated randomness. This uses the RDRAND / RDSEED
+	  instructions provided by Intel's DRNG technology.
+
+config X86_64_CET_IBT
+	bool "CET Indirect Branch Tracker"
+	help
+	 Enable CET Indirect Branch Tracker
+
+config X86_64_CET_SS
+	bool "CET Shadow Stack"
+	help
+	 Enable CET Shadow Stack
+endmenu
+>>>>>>> 3146ccfc (arch/x86_64: add CET to x86 arch Config.uk and Makefile.uk)
