@@ -99,6 +99,11 @@
 #include <uk/errptr.h>
 #include "banner.h"
 
+#if CONFIG_LIBUKCET
+#include <uk/cet.h>
+#include <sys/mman.h>
+#endif
+
 #if !CONFIG_LIBUKBOOT_INITSCHED
 #include <uk/plat/common/lcpu.h>
 #endif /* !CONFIG_LIBUKBOOT_INITSCHED */
@@ -239,6 +244,18 @@ static struct uk_alloc *heap_init()
 #if CONFIG_LIBPOSIX_ENVIRON
 extern char **environ;
 #endif /* CONFIG_LIBPOSIX_ENVIRON */
+
+static inline void wrmsr(unsigned int msr, __u32 lo, __u32 hi)
+{
+	asm volatile("wrmsr"
+			     : /* no outputs */
+			     : "c"(msr), "a"(lo), "d"(hi));
+}
+
+static inline void wrmsrl(unsigned int msr, __u64 val)
+{
+	wrmsr(msr, (__u32) (val & 0xffffffffULL), (__u32) (val >> 32));
+}
 
 void uk_boot_entry(void)
 {
@@ -414,9 +431,61 @@ void uk_boot_entry(void)
 	print_banner(stdout);
 	fflush(stdout);
 
+// this must be directly in the main function because putting it in a different
+// function will result in problems when we try to return from that function
+
+#if ((__CET__ & 1) && CONFIG_X86_64_CET_SS)
+	void *shstk = NULL;
+	void *isst = NULL;
+	int has_shadow_stack = 0;
+
+	has_shadow_stack = ukcet_cpu_supports_shadow_stack();
+	if (has_shadow_stack) {
+		shstk = ukcet_create_shstk();
+		if (shstk == NULL) {
+			uk_pr_err("Shadow stack creation failed");
+			goto exit;
+		}
+		isst = ukcet_create_isst();
+		if (isst == NULL) {
+			uk_pr_err("Interrupt shadow stack table creation failed");
+			goto exit;
+		}
+		asm volatile ("cli" : : :);
+		#if CONFIG_X86_64_CET_IBT
+			wrmsrl(MSR_IA32_S_CET, X86_CET_SHSTK_EN | X86_CET_WRSS_EN | X86_CET_ENDBR_EN | X86_CET_NO_TRACK_EN);
+		#else
+			wrmsrl(MSR_IA32_S_CET, X86_CET_SHSTK_EN | X86_CET_WRSS_EN);
+		#endif
+		wrmsrl(MSR_IA32_INT_SSP_TAB, (unsigned long long) isst);
+		wrmsrl(MSR_IA32_PL0_SSP, (unsigned long long)(((char*)shstk) + SHSTK_SIZE - PAGE_SIZE - 8));
+		asm volatile ("setssbsy" : : :);
+		asm volatile("sti" : : :);
+	}
+#endif
+
 #if !CONFIG_LIBUKBOOT_MAINTHREAD
 	tctx.exit_code = do_main(ictx.cmdline.argc, ictx.cmdline.argv);
-	tctx.target = UKPLAT_HALT;
+
+#if ((__CET__ & 1) && CONFIG_X86_64_CET_SS)
+	if (has_shadow_stack) {
+		// cleanup shadow stacks
+		// TODO: move relevant code to ukcet
+		asm volatile ("cli" : : :);
+		#if CONFIG_X86_64_CET_IBT
+			wrmsrl(MSR_IA32_S_CET, X86_CET_ENDBR_EN | X86_CET_NO_TRACK_EN);
+		#else
+			wrmsrl(MSR_IA32_S_CET, 0);
+		#endif
+		wrmsrl(MSR_IA32_INT_SSP_TAB, 0);
+		wrmsrl(MSR_IA32_PL0_SSP, 0);
+		asm volatile ("sti" : : :);
+		munmap(shstk, SHSTK_SIZE);
+		ukcet_unmap_isst(isst);
+	}
+#endif
+
+tctx.target = UKPLAT_HALT;
 
 #else /* CONFIG_LIBUKBOOT_MAINTHREAD */
 	/* Unblock main thread (will execute main()) */

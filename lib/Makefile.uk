@@ -71,5 +71,9 @@ $(eval $(call import_lib,$(CONFIG_UK_BASE)/lib/vfscore))
 $(eval $(call import_lib,$(CONFIG_UK_BASE)/lib/ukrust))
 $(eval $(call import_lib,$(CONFIG_UK_BASE)/lib/ukreloc))
 $(eval $(call import_lib,$(CONFIG_UK_BASE)/lib/ukofw))
+<<<<<<< HEAD
 $(eval $(call import_lib,$(CONFIG_UK_BASE)/lib/ukallocstack))
 $(eval $(call import_lib,$(CONFIG_UK_BASE)/lib/ukbinfmt))
+=======
+$(eval $(call import_lib,$(CONFIG_UK_BASE)/lib/ukcet))
+>>>>>>> 274568e7 (arch/x86_64: Add CET Shadow Stacks for non-threaded applications)
