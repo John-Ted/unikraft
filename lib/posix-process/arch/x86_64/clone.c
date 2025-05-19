@@ -8,6 +8,10 @@
 #include <uk/plat/common/cpu.h>
 #include <uk/process.h>
 #include <uk/arch/ctx.h>
+#if ((__CET__ & 1) && CONFIG_X86_64_CET_SS)
+#include <uk/cet.h>
+#endif
+
 
 void clone_setup_child_ctx(struct ukarch_execenv *pexecenv,
 			   struct uk_thread *child, __uptr sp)
@@ -53,6 +57,21 @@ void clone_setup_child_ctx(struct ukarch_execenv *pexecenv,
 		cexecenv->sysctx.fsbase = pexecenv->sysctx.fsbase;
 	else
 		cexecenv->sysctx.fsbase = child->tlsp;
+
+	#if ((__CET__ & 1) && CONFIG_X86_64_CET_SS)
+	child->_mem.shadow_stack = ukcet_create_shstk();
+	__uptr _ssp = SHSTK_BASE(child->_mem.shadow_stack);
+	/* the syscall exit is an iretq, all the data popped from the stack by
+	 * this instruction must also be in the shadow stack
+	 */
+	uint64_t cs_value;
+	__asm__ volatile ("movq %%cs, %0" : "=r" (cs_value));
+	_ssp = ukarch_shadow_stack_push(_ssp, cs_value);
+	_ssp = ukarch_shadow_stack_push(_ssp, cusc->regs.rip);
+	_ssp = ukarch_shadow_stack_push(_ssp, (long long)_ssp - 8);
+	child->ctx.ssp = _ssp;
+	#endif
+
 
 	ukarch_ctx_init_entry1(&child->ctx,
 			       auxsp_pos,

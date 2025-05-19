@@ -54,6 +54,10 @@ void ukarch_ctx_init(struct ukarch_ctx *ctx,
 {
 	__uptr _sp;
 
+#if ((__CET__ & 1) && CONFIG_X86_64_CET_SS)
+	__uptr _ssp = ctx->ssp;
+#endif
+
 	UK_ASSERT(ctx);
 	UK_ASSERT(sp);			/* a stack is needed */
 	UK_ASSERT(ip);			/* NULL as IP will cause a crash */
@@ -67,6 +71,18 @@ void ukarch_ctx_init(struct ukarch_ctx *ctx,
 		ukarch_ctx_init_bare(ctx, _sp, (long) _ctx_x86_clearregs);
 	}
 
+#if ((__CET__ & 1) && CONFIG_X86_64_CET_SS)
+	_ssp = ukarch_shadow_stack_push(_ssp, (long long) ip);
+	if (keep_regs) {
+		_ssp = ukarch_shadow_stack_push(_ssp, (long long) _ctx_x86_call0);
+	} else {
+		_ssp = ukarch_shadow_stack_push(_ssp, (long long) _ctx_x86_call0);
+		_ssp = ukarch_shadow_stack_push(_ssp, (long long) _ctx_x86_clearregs);
+	}
+	_ssp = ukarch_shadow_stack_push(_ssp, ((long long) _ssp) | 1);
+	ukarch_ctx_init_ssp(ctx, _ssp);
+#endif
+
 	uk_pr_debug("ukarch_ctx %p: start:%p sp:%p\n",
 		    ctx, (void *) ip, (void *) sp);
 }
@@ -76,6 +92,10 @@ void ukarch_ctx_init_entry0(struct ukarch_ctx *ctx,
 			    ukarch_ctx_entry0 entry)
 {
 	__uptr _sp;
+
+#if ((__CET__ & 1) && CONFIG_X86_64_CET_SS)
+	__uptr _ssp = ctx->ssp;
+#endif
 
 	UK_ASSERT(ctx);
 	UK_ASSERT(sp);			/* a stack is needed */
@@ -106,6 +126,18 @@ void ukarch_ctx_init_entry0(struct ukarch_ctx *ctx,
 		ukarch_ctx_init_bare(ctx, _sp, (long) _ctx_x86_clearregs);
 	}
 
+#if ((__CET__ & 1) && CONFIG_X86_64_CET_SS)
+	_ssp = ukarch_shadow_stack_push(_ssp, (long long) entry);
+	if (keep_regs) {
+		_ssp = ukarch_shadow_stack_push(_ssp, (long long) _ctx_x86_call0);
+	} else {
+		_ssp = ukarch_shadow_stack_push(_ssp, (long long) _ctx_x86_call0);
+		_ssp = ukarch_shadow_stack_push(_ssp, (long long) _ctx_x86_clearregs);
+	}
+	_ssp = ukarch_shadow_stack_push(_ssp, ((long long) _ssp) | 1);
+	ukarch_ctx_init_ssp(ctx, _ssp);
+#endif
+
 	uk_pr_debug("ukarch_ctx %p: entry:%p(), sp:%p\n",
 		    ctx, entry, (void *) sp);
 }
@@ -121,6 +153,11 @@ void ukarch_ctx_init_entry1(struct ukarch_ctx *ctx,
 	UK_ASSERT(entry);		/* NULL as func will cause a crash */
 	UK_ASSERT(!(sp & UKARCH_SP_ALIGN_MASK)); /* sp properly aligned? */
 
+
+#if ((__CET__ & 1) && CONFIG_X86_64_CET_SS)
+	__uptr _ssp = ctx->ssp;
+#endif
+
 	sp  = ukarch_rstack_push(sp, (__u64) 0x0); /* SystemV call convention */
 	_sp = ukarch_rstack_push(sp, (long) entry);
 	_sp = ukarch_rstack_push(_sp, arg);
@@ -130,6 +167,18 @@ void ukarch_ctx_init_entry1(struct ukarch_ctx *ctx,
 		_sp = ukarch_rstack_push(_sp, (long) _ctx_x86_call1);
 		ukarch_ctx_init_bare(ctx, _sp, (long) _ctx_x86_clearregs);
 	}
+
+#if ((__CET__ & 1) && CONFIG_X86_64_CET_SS)
+	_ssp = ukarch_shadow_stack_push(_ssp, (long long) entry);
+	if (keep_regs) {
+		_ssp = ukarch_shadow_stack_push(_ssp, (long long) _ctx_x86_call1);
+	} else {
+		_ssp = ukarch_shadow_stack_push(_ssp, (long long) _ctx_x86_call1);
+		_ssp = ukarch_shadow_stack_push(_ssp, (long long) _ctx_x86_clearregs);
+	}
+	_ssp = ukarch_shadow_stack_push(_ssp, ((long long) _ssp) | 1);
+	ukarch_ctx_init_ssp(ctx, _ssp);
+#endif
 
 	uk_pr_debug("ukarch_ctx %p: entry:%p(%lx), sp:%p\n",
 		    ctx, entry, arg, (void *) sp);
@@ -146,6 +195,10 @@ void ukarch_ctx_init_entry2(struct ukarch_ctx *ctx,
 	UK_ASSERT(entry);		/* NULL as func will cause a crash */
 	UK_ASSERT(!(sp & UKARCH_SP_ALIGN_MASK)); /* sp properly aligned? */
 
+#if ((__CET__ & 1) && CONFIG_X86_64_CET_SS)
+	__uptr _ssp = ctx->ssp;
+#endif
+
 	sp  = ukarch_rstack_push(sp, (__u64) 0x0); /* SystemV call convention */
 	_sp = ukarch_rstack_push(sp, (long) entry);
 	_sp = ukarch_rstack_push(_sp, arg0);
@@ -156,6 +209,18 @@ void ukarch_ctx_init_entry2(struct ukarch_ctx *ctx,
 		_sp = ukarch_rstack_push(_sp, (long) _ctx_x86_call2);
 		ukarch_ctx_init_bare(ctx, _sp, (long) _ctx_x86_clearregs);
 	}
+
+#if ((__CET__ & 1) && CONFIG_X86_64_CET_SS)
+	_ssp = ukarch_shadow_stack_push(_ssp, (long long) entry);
+	if (keep_regs) {
+		_ssp = ukarch_shadow_stack_push(_ssp, (long long) _ctx_x86_call2);
+	} else {
+		_ssp = ukarch_shadow_stack_push(_ssp, (long long) _ctx_x86_call2);
+		_ssp = ukarch_shadow_stack_push(_ssp, (long long) _ctx_x86_clearregs);
+	}
+	_ssp = ukarch_shadow_stack_push(_ssp, ((long long) _ssp) | 1);
+	ukarch_ctx_init_ssp(ctx, _ssp);
+#endif
 
 	uk_pr_debug("ukarch_ctx %p: entry:%p(%lx, %lx), sp:%p\n",
 		    ctx, entry, arg0, arg1, (void *) sp);
