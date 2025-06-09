@@ -887,6 +887,11 @@ void uk_thread_container_init_fn0(struct uk_thread *t,
 	UK_ASSERT(t->ctx.ip == 0x0);
 	UK_ASSERT(!(t->flags & UK_THREADF_RUNNABLE));
 
+#if ((__CET__ & 1) && CONFIG_X86_64_CET_SS)
+	t->_mem.shadow_stack = ukcet_create_shstk();
+	t->ctx.ssp = SHSTK_BASE(t->_mem.shadow_stack);
+#endif
+
 	ukarch_ctx_init_entry0(&t->ctx, t->ctx.sp, 0,
 			       (ukarch_ctx_entry0) fn);
 	uk_thread_set_runnable(t);
@@ -901,6 +906,11 @@ void uk_thread_container_init_fn1(struct uk_thread *t,
 	UK_ASSERT(t->ctx.ip == 0x0);
 	UK_ASSERT(!(t->flags & UK_THREADF_RUNNABLE));
 
+#if ((__CET__ & 1) && CONFIG_X86_64_CET_SS)
+	t->_mem.shadow_stack = ukcet_create_shstk();
+	t->ctx.ssp = SHSTK_BASE(t->_mem.shadow_stack);
+#endif
+
 	ukarch_ctx_init_entry1(&t->ctx, t->ctx.sp, 0,
 			       (ukarch_ctx_entry1) fn, (long) argp);
 	uk_thread_set_runnable(t);
@@ -914,6 +924,11 @@ void uk_thread_container_init_fn2(struct uk_thread *t,
 	UK_ASSERT(fn);
 	UK_ASSERT(t->ctx.ip == 0x0);
 	UK_ASSERT(!(t->flags & UK_THREADF_RUNNABLE));
+
+#if ((__CET__ & 1) && CONFIG_X86_64_CET_SS)
+	t->_mem.shadow_stack = ukcet_create_shstk();
+	t->ctx.ssp = SHSTK_BASE(t->_mem.shadow_stack);
+#endif
 
 	ukarch_ctx_init_entry2(&t->ctx, t->ctx.sp, 0,
 			       (ukarch_ctx_entry2) fn,
