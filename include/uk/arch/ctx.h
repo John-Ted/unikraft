@@ -59,7 +59,6 @@
 #define UKARCH_CTX_OFFSETOF_SP 8
 #endif
 
-<<<<<<< HEAD
 /* We must make sure that ECTX is aligned, so we make use of some padding,
  * whose size is equal to what we need to add to UKARCH_ECTX_SIZE
  * to make it aligned with UKARCH_ECTX_ALIGN

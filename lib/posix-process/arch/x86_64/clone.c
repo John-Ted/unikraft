@@ -67,7 +67,7 @@ void clone_setup_child_ctx(struct ukarch_execenv *pexecenv,
 	uint64_t cs_value;
 	__asm__ volatile ("movq %%cs, %0" : "=r" (cs_value));
 	_ssp = ukarch_shadow_stack_push(_ssp, cs_value);
-	_ssp = ukarch_shadow_stack_push(_ssp, cusc->regs.rip);
+	_ssp = ukarch_shadow_stack_push(_ssp, cexecenv->regs.rip);
 	_ssp = ukarch_shadow_stack_push(_ssp, (long long)_ssp - 8);
 	child->ctx.ssp = _ssp;
 	#endif
