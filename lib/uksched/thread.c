@@ -256,7 +256,9 @@ static void _uk_thread_struct_init(struct uk_thread *t,
 	t->dtor = dtor;
 	t->exec_time = 0;
 
+#if ((__CET__ & 1) && CONFIG_X86_64_CET_SS)
 	t->_mem.shadow_stack = ukcet_create_shstk();
+#endif
 
 	if (auxsp) {
 		t->flags |= UK_THREADF_AUXSP;
@@ -300,10 +302,13 @@ int uk_thread_init_bare(struct uk_thread *t,
 	_uk_thread_struct_init(t, auxsp, tlsp, is_uktls, ectx, name, priv,
 			       dtor);
 	ukarch_ctx_init_bare(&t->ctx, sp, ip);
+
+#if ((__CET__ & 1) && CONFIG_X86_64_CET_SS)
 	__uptr _ssp = SHSTK_BASE(t->_mem.shadow_stack);
 	_ssp = ukarch_shadow_stack_push(_ssp, (long long) ip);
 	_ssp = ukarch_shadow_stack_push(_ssp, ((long long) _ssp) | 1);
 	ukarch_ctx_init_ssp(&t->ctx, _ssp + 8);
+#endif
 
 	if (ip)
 		uk_thread_set_runnable(t);
