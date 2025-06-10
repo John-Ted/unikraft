@@ -481,7 +481,7 @@ void uk_boot_entry(void)
 		wrmsrl(MSR_IA32_INT_SSP_TAB, 0);
 		wrmsrl(MSR_IA32_PL0_SSP, 0);
 		asm volatile ("sti" : : :);
-		munmap(shstk, SHSTK_SIZE);
+		ukcet_unmap_shstk(shstk);
 		ukcet_unmap_isst(isst);
 	}
 #endif

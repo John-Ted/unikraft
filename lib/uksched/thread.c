@@ -546,7 +546,7 @@ void _uk_thread_struct_free_alloc(struct uk_thread *t)
 		t->_mem.auxstack   = NULL;
 	}
 #if ((__CET__ & 1) && CONFIG_X86_64_CET_SS)
-	munmap(t->_mem.shadow_stack, SHSTK_SIZE);
+	ukcet_unmap_shstk(t->_mem.shadow_stack);
 #endif
 }
 

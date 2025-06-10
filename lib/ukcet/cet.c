@@ -6,7 +6,6 @@
 
 #define PAGE_ATTR_PROT_READ		0x01 /* Page is readable */
 #define X86_PTE_DIRTY			0x040UL
-//#define PAGE_SIZE 4096
 
 static inline void _cpuid(__u32 fn, __u32 subfn,
 				    __u32 *eax, __u32 *ebx,
@@ -58,26 +57,25 @@ void* ukcet_create_shstk() {
 void* ukcet_create_isst() {
 	unsigned long long* isst = mmap(NULL, 8 * sizeof(unsigned long long), PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 	if (isst == NULL) {
-		//printf("failed to init ISST\n");
 		return NULL;
 	}
 	for (int i = 1; i < 8; i++) {
 		void* shstk = ukcet_create_shstk(SHSTK_SIZE);
 		if (shstk == NULL) {
-			//printf("failed to init ISST shadow stack at index %d\n", i);
 			return NULL;
 		}
 		isst[i] = (unsigned long long)(((char*)shstk) + SHSTK_SIZE - PAGE_SIZE - 8);
-		
-		//printf("ISST entry created at %d: %llx token:%llx\n", i, isst[i], ((unsigned long long*)isst[i])[0]);
 	}
-	//wrmsrl(MSR_IA32_INT_SSP_TAB, (unsigned long long) isst);
 	return (void*)isst;
+}
+
+void ukcet_unmap_shstk(void *shstk) {
+	munmap(shstk, SHSTK_SIZE);
 }
 
 void ukcet_unmap_isst(void *isst) {
     for (int i = 1; i < 8; i++) {
-		munmap((void*)(((unsigned long long*)(isst))[i]), SHSTK_SIZE);
+		ukcet_unmap_shstk((void*)(((unsigned long long*)(isst))[i]));
 	}
 	munmap(isst, 8 * sizeof(unsigned long long));
 }
