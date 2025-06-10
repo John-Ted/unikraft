@@ -1,7 +1,7 @@
 #ifndef __UKARCH_X86_CET__
 #define __UKARCH_X86_CET__
 
-#if __ASSEMBLY__
+#ifdef __ASSEMBLY__
     #if (CONFIG_X86_64_CET_IBT && (__CET__ & 1))
         #define X86_CET_ENDBR endbr64
         #define X86_CET_ENDBR_NOTRACK notrack

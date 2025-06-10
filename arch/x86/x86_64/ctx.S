@@ -34,7 +34,6 @@
 
 ENTRY(_ctx_x86_clearregs)
 	X86_CET_ENDBR
-	endbr64
 
 	/* wipe argument and return registers */
 	xorq %rdi, %rdi
@@ -119,7 +118,7 @@ skip_ssp_restore:
 
 .Lresume:
 	X86_CET_ENDBR
-	endbr64
+
 	popq %r15
 	popq %r14
 	popq %r13
